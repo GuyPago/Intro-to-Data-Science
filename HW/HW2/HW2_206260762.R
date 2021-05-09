@@ -152,15 +152,68 @@ orthodox.df <- df %>%
 orthodox.df <- orthodox.df %>%
   select(-4)
 
-?ntile
-ntile(orthodox.df,2)
 
 orthodox.df %>%
   mutate(QTR = ntile(monthly_income, 4)) %>%
   mutate(QTR = factor(QTR, levels = c(1,2,3,4), ordered = 'True')) %>%
   ggplot(mapping = aes(x=branch, y=share, fill=QTR)) +
   geom_col() +
-  ggtitle('Employment share per branch', subtitle = ' with quartiled monthly income')
+  ggtitle('Employment share per branch', subtitle = ' Orthodox')
+
 
 
 # ***** Q13 *****
+
+non_ortho.df <- df %>%
+  filter(Population_sector == 'Non-orthodox Jews', branch %in% orthodox.df$branch) %>%
+  mutate(all_weights =sum(weight)) %>%
+  group_by(branch) %>%
+  mutate(sector_sum = sum(weight)/all_weights) %>%
+  summarize(share = first(sector_sum), monthly_income = weighted.mean(monthly_income, weight))
+
+
+# ***** Q14 *****
+orthodox.df %>%
+  mutate(QTR = ntile(monthly_income, 4)) %>%
+  mutate(QTR = factor(QTR, levels = c(1,2,3,4), ordered = 'True')) %>%
+  ggplot() +
+  geom_col(mapping = aes(x=branch, y=share, fill=QTR)) +
+  geom_point(mapping = aes(x=branch, y=non_ortho.df$share), color='red')
+  ggtitle('Employment share per branch', subtitle = 'With dots marking non-orthodx share')
+
+  
+# ***** Q15 *****
+orthodox.wage.plot <- orthodox.df %>%
+    ggplot(mapping = aes(x=branch, y=monthly_income)) +
+    geom_col() +
+    geom_hline(yintercept = weighted.mean(orthodox.df$monthly_income, orthodox.df$share),
+               color='red') +
+    ggtitle('Average monthly income per branch', subtitle = 'Orthodox')
+
+
+# ***** Q16 *****
+improved_wage <- orthodox.df %>%
+  inner_join(non_ortho.df, by='branch') %>%
+  summarize(weighted.mean(monthly_income.x, share.y))%>%
+  pull()
+  
+
+
+# ***** Q17 *****
+orthodox.wage.plot +
+  geom_hline(yintercept = improved_wage, color = 'green') +
+  annotate(geom = 'text',
+           y = improved_wage + 700,
+           x = 0.5,
+           hjust = 0,
+           label = 'Improved',
+           color = 'green') +
+  
+  annotate(geom = 'text',
+           y = weighted.mean(orthodox.df$monthly_income, orthodox.df$share) + 700,
+           x = 0.5,
+           hjust = 0,
+           label = 'Today',
+           color = 'red')
+  
+  
