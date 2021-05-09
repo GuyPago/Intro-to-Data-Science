@@ -70,6 +70,7 @@ df %>%
            color = 'white',)
 
 
+# ***** Q5 *****
 df %>%
   group_by(Population_sector) %>%
   ggplot(mapping = aes(x=Age_group, weight = weight, fill=Population_sector)) +
@@ -77,7 +78,7 @@ df %>%
   ggtitle('Population rate by age group') +
   ylab('Percent')
 
-# This is the analytical calculation 
+# This is the calculation corresponding to the plot
 df %>%
   group_by(Age_group) %>%
   mutate(pop_total = sum(weight)) %>%
@@ -85,3 +86,81 @@ df %>%
   summarize(People = sum(weight), pop_total = first(pop_total)) %>%
   mutate(pop_share = People / pop_total) %>%
   select(Population_sector, Age_group, pop_share)
+
+
+# ***** Q6 *****
+df %>%
+  filter(Gender == 'Male') %>%
+  group_by(Age_group, Population_sector) %>%
+  summarize(Employed ,emp_rate = weighted.mean(Employed == 1)) %>%
+  ggplot(mapping = aes(x=Age_group, y=emp_rate, fill = Population_sector)) +
+  geom_col(position = 'dodge') +
+  ggtitle('Employment rate by age group and sector')
+  
+
+
+# ***** Q7 *****
+#Filter data
+df <- df %>%
+  filter(!is.na(Hourly_wage), !is.na(Monthly_hours)) %>%
+  mutate(monthly_income = Hourly_wage * Monthly_hours)
+
+df %>%
+  ggplot(mapping=aes(x=monthly_income, weight=weight)) +
+  geom_histogram() +
+  ggtitle('Monthly income')
+
+
+# ***** Q8 *****
+# Average monthly income, monthly working hours and hourly wage data frame
+df %>%
+  summarize(avg_month_inc = mean(monthly_income),
+            avg_work_hrs = mean(Monthly_hours),
+            avg_hourly_wage = mean(Hourly_wage))
+
+
+# ***** Q9 *****
+
+df %>%
+  group_by(Gender, Population_sector) %>%
+  summarize(avg_month_inc = round(weighted.mean(monthly_income,weight), digits = 0)) %>%
+  ggplot(mapping = aes(x=Gender, y=avg_month_inc)) +
+  geom_col() +
+  facet_wrap(~ Population_sector) +
+  geom_text(aes(label= avg_month_inc, vjust=1.5), color='white') +
+  ggtitle('Monthly income by gender and sector')
+
+
+# ***** Q10 *****
+df <- df %>%
+  filter(Gender == 'Male', Population_sector != 'Arabs')
+
+
+# ***** Q11 *****
+# The 'check_mean' column checks whether the result contradicts Q9.
+
+orthodox.df <- df %>%
+  filter(Population_sector == 'Ultra-orthodox') %>%
+  mutate(all_weights =sum(weight)) %>%
+  group_by(branch) %>%
+  mutate(sector_sum = sum(weight)/all_weights) %>%
+  summarize(share = first(sector_sum), monthly_income = weighted.mean(monthly_income, weight)) %>%
+  mutate(check_mean = weighted.mean(monthly_income, share))
+
+
+# ***** Q12 *****
+orthodox.df <- orthodox.df %>%
+  select(-4)
+
+?ntile
+ntile(orthodox.df,2)
+
+orthodox.df %>%
+  mutate(QTR = ntile(monthly_income, 4)) %>%
+  mutate(QTR = factor(QTR, levels = c(1,2,3,4), ordered = 'True')) %>%
+  ggplot(mapping = aes(x=branch, y=share, fill=QTR)) +
+  geom_col() +
+  ggtitle('Employment share per branch', subtitle = ' with quartiled monthly income')
+
+
+# ***** Q13 *****
