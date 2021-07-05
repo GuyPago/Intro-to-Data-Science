@@ -10,8 +10,7 @@ df <- df %>%
   rename(airline = Airline)
 
 df %>%
-  filter(Stops == 'n', Price_ILS < 3000) %>%
-  filter(airline %in% c('EL AL', 'Arkia', 'ISRAIR')) %>%
+  filter(Stops == 'n') %>%
   ggplot(mapping = aes(x=Hours, y=Price_ILS)) +
   geom_point() +
   geom_smooth(method = 'lm', se = FALSE, color='blue', size=0.1)
@@ -48,7 +47,7 @@ df_test %>%
   #geom_smooth(method = 'lm', se = FALSE)
 
 df_Israel_airlines <- df_non_stop %>%
-  filter(airline %in% c('EL AL', 'Arkia', 'ISRAIR')) 
+  filter(airline %in% c('EL AL', 'Arkia', 'ISRAIR'), Price_ILS < 2650) 
 
 model_3_Israel_airlines_All_Weekdays <- lm(Price_ILS ~ Hours + airline + Weekday, df_Israel_airlines)
 summary(model_3_Israel_airlines_All_Weekdays)
